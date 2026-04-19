@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import DhakaMap from './DhakaMap';
 
-export default function Home({ user, userRole, isAdmin, onLogout, onNavigate }) {
+export default function Home({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
   const [crimes, setCrimes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [navSearch, setNavSearch] = useState('');
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
 
   useEffect(() => {
     // Fetch verified crimes from API
@@ -37,7 +39,7 @@ export default function Home({ user, userRole, isAdmin, onLogout, onNavigate }) 
     setRegionCounts(counts);
   }, [crimes]);
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       {/* Fixed Navigation Bar */}
       <nav className="navbar">
         <div className="nav-content">
@@ -52,7 +54,19 @@ export default function Home({ user, userRole, isAdmin, onLogout, onNavigate }) 
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="" aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(navSearch);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className={`profile-btn ${isAdmin ? 'admin' : userRole === 'Officer' ? 'officer' : ''}`}>

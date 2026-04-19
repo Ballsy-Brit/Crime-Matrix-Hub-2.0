@@ -4,7 +4,9 @@ import regions from './regions';
 
 const crimeTypes = ['Theft', 'Robbery', 'Burglary', 'Assault', 'Fraud', 'Vehicle Theft', 'Arson', 'Other'];
 
-export default function Report({ user, userRole, isAdmin, onLogout, onNavigate }) {
+export default function Report({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
+  const [navSearch, setNavSearch] = useState('');
   const [formData, setFormData] = useState({
     crimeType: 'Theft',
     region: '',
@@ -58,7 +60,7 @@ export default function Report({ user, userRole, isAdmin, onLogout, onNavigate }
   };
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">
@@ -72,7 +74,19 @@ export default function Report({ user, userRole, isAdmin, onLogout, onNavigate }
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="" aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(navSearch);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className={`profile-btn ${isAdmin ? 'admin' : userRole === 'Officer' ? 'officer' : ''}`}>

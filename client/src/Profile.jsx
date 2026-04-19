@@ -3,6 +3,7 @@ import './App.css';
 import regions from './regions';
 
 export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate }) {
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', phone: '', region: '', photoUrl: '' });
@@ -97,7 +98,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
   };
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">

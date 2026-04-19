@@ -13,6 +13,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [crimeSearchTerm, setCrimeSearchTerm] = useState('');
 
   useEffect(() => {
     // Check if user is already logged in
@@ -52,33 +53,40 @@ function App() {
     }
   };
 
+  const handleCrimeSearch = (rawQuery) => {
+    const query = (rawQuery || '').trim();
+    if (!query) return;
+    setCrimeSearchTerm(query);
+    setView('crime');
+  };
+
   return (
     <div className="App-root">
       {user ? (
         <>
           {view === 'home' && (
-            <Home user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
+            <Home user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} />
           )}
 
           {view === 'map' && (
-            <MapPage user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
+            <MapPage user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} />
           )}
 
           {view === 'report' && (
-            <Report user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
+            <Report user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} />
           )}
 
           {view === 'pending' && (
-            <PendingCrimes user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
+            <PendingCrimes user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} />
           )}
           {view === 'profile' && (
             <Profile user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
           )}
           {view === 'crime' && (
-            <CrimeArchive user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} />
+            <CrimeArchive user={user} userRole={userRole} isAdmin={isAdmin} onLogout={() => { handleLogout(); setView('home'); }} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} initialSearchQuery={crimeSearchTerm} />
           )}
           {view === 'officers' && isAdmin && (
-            <Officers user={user} onNavigate={handleNavigate} />
+            <Officers user={user} onNavigate={handleNavigate} onCrimeSearch={handleCrimeSearch} />
           )}
         </>
       ) : (

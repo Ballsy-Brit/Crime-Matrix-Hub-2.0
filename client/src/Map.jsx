@@ -12,17 +12,35 @@ const allCrimes = [
   'Vehicle Theft'
 ];
 
-export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate }) {
+const REGION_ALIASES = {
+  narayanganj: 'Narayangonj',
+  narayangonj: 'Narayangonj',
+};
+
+function normalizeRegionName(region) {
+  const raw = String(region || '').trim();
+  const key = raw.toLowerCase();
+  return REGION_ALIASES[key] || raw;
+}
+
+export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
+  const [navSearch, setNavSearch] = useState('');
   const [query, setQuery] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
   const [filters, setFilters] = useState({
-    Theft: true,
-    Robbery: true,
-    Fraud: true,
-    Assault: true,
-    Arson: true,
-    Burglary: true,
-    'Vehicle Theft': true
+    Theft: false,
+    Robbery: false,
+    Fraud: false,
+    Assault: false,
+    Arson: false,
+    Burglary: false,
+    'Vehicle Theft': false
   });
+
+  const hasActiveFilter = Object.values(filters).some(Boolean);
+  const hasSearchQuery = query.trim().length > 0;
+  const shouldHighlight = hasActiveFilter || hasSearchQuery;
 
   const toggleFilter = (name) => {
     setFilters((f) => ({ ...f, [name]: !f[name] }));
@@ -58,22 +76,30 @@ export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate 
     const counts = {};
     const fcounts = {};
     verifiedCrimes.forEach((c) => {
-      const r = c.region || 'Unknown';
+      const r = normalizeRegionName(c.region || 'Unknown');
       counts[r] = (counts[r] || 0) + 1;
 
-      // determine if this crime should count as filtered (matching selected crime types and query)
-      const matchType = filters[c.crimeType];
+      // Highlights should appear only when user applies type filter or text search.
+      const matchType = hasActiveFilter ? !!filters[c.crimeType] : true;
       const matchQuery = !query || (c.title + ' ' + c.description).toLowerCase().includes(query.toLowerCase());
-      if (matchType && matchQuery) {
+      const matchRegion = !selectedRegion || r === selectedRegion;
+      const matchOngoing = c.status !== 'Closed';
+      if (shouldHighlight && matchType && matchQuery && matchRegion && matchOngoing) {
         fcounts[r] = (fcounts[r] || 0) + 1;
       }
     });
     setRegionCounts(counts);
     setRegionFilteredCounts(fcounts);
-  }, [verifiedCrimes, filters, query]);
+  }, [verifiedCrimes, filters, query, selectedRegion, hasActiveFilter, shouldHighlight]);
+
+  const selectedRegionCrimes = selectedRegion
+    ? verifiedCrimes
+        .filter((c) => normalizeRegionName(c.region) === selectedRegion && c.status !== 'Closed')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : [];
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">
@@ -87,7 +113,19 @@ export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate 
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="" aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(navSearch);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className={`profile-btn ${isAdmin ? 'admin' : userRole === 'Officer' ? 'officer' : ''}`}>
@@ -125,13 +163,54 @@ export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate 
             ))}
           </div>
 
+          {selectedRegion && (
+            <div className="panel-note" style={{ marginBottom: 10 }}>
+              Selected Thana: <strong>{selectedRegion}</strong>{' '}
+              <button className="toggle-btn" onClick={() => setSelectedRegion('')} style={{ marginLeft: 8 }}>
+                Clear
+              </button>
+            </div>
+          )}
+
+          {selectedRegion && (
+            <div className="thana-crimes-panel">
+              <div className="thana-crimes-title">Ongoing In {selectedRegion}</div>
+              {selectedRegionCrimes.length === 0 ? (
+                <p className="no-thana-crimes">No ongoing crimes in this thana.</p>
+              ) : (
+                <div className="thana-crimes-list">
+                  {selectedRegionCrimes.map((crime) => (
+                    <button
+                      key={crime.id}
+                      className="thana-crime-link"
+                      onClick={() => onCrimeSearch(crime.title || crime.crimeType || 'Crime')}
+                    >
+                      <span>{crime.title || 'Untitled Crime'}</span>
+                      <small className="thana-crime-meta">{crime.crimeType} • {new Date(crime.createdAt).toLocaleDateString()}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <button className="search-button">Search</button>
           <p className="panel-note">Your Crime profile name will be shared. Never submit passwords.</p>
         </aside>
 
         <section className="map-area">
           <div className="map-placeholder large">
-            <DhakaMap counts={regionCounts} filteredCounts={regionFilteredCounts} onRegionClick={(r) => { setQuery(''); /* clear text search */ console.log('Region clicked:', r); }} />
+            <DhakaMap
+              counts={regionCounts}
+              filteredCounts={regionFilteredCounts}
+              crimes={verifiedCrimes}
+              shouldHighlight={shouldHighlight}
+              selectedRegion={selectedRegion}
+              onRegionClick={(r) => {
+                setQuery('');
+                setSelectedRegion((prev) => (prev === r ? '' : r));
+              }}
+            />
           </div>
         </section>
       </div>

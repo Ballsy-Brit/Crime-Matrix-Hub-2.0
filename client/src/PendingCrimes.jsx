@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNavigate }) {
+export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
+  const [navSearch, setNavSearch] = useState('');
   const [crimes, setCrimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState({});
@@ -50,7 +52,7 @@ export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNav
   };
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">
@@ -61,7 +63,19 @@ export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNav
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="" aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(navSearch);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className={`profile-btn ${userRole === 'Officer' ? 'officer' : ''}`}>

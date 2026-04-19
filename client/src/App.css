@@ -295,6 +295,7 @@
   background: #f5eec0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
   position: relative;
+  padding-top: 80px;
 }
 
 /* Fixed Navigation Bar */
@@ -461,7 +462,7 @@ select option {
   display: flex;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 100px 20px 40px;
+  padding: 20px 20px 40px;
   gap: 30px;
   position: relative;
 }
@@ -537,7 +538,7 @@ select option {
 
 /* Map Section (Right) */
 .map-section {
-  flex: 0 0 400px;
+  flex: 0 0 560px;
   position: sticky;
   top: 70px;
   height: fit-content;
@@ -549,6 +550,9 @@ select option {
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 4 / 5;
+  min-height: 620px;
+  padding: 10px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -574,12 +578,299 @@ select option {
 }
 
 /* Dhaka map styles */
-.dhaka-map-wrap { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
-.dhaka-map-svg { width: 100%; height: 700px; border-radius: 10px; overflow: visible; }
-.dhaka-map-legend { font-size: 0.85rem; color: #333; display:flex; gap:12px; align-items:center; }
-.legend-dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:8px; }
-.legend-dot.big { width:16px; height:16px; background:rgba(220,50,50,0.4); border:1px solid rgba(200,30,30,0.6); }
-.legend-dot.small { background:#2f5a46; border:1px solid rgba(0,0,0,0.06); }
+.dhaka-map-wrap {
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 16px;
+  align-items: stretch;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.dhaka-map-canvas {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid rgba(7, 43, 32, 0.18);
+  background: linear-gradient(145deg, rgba(247, 242, 210, 0.8) 0%, rgba(235, 227, 193, 0.78) 100%);
+  padding: 10px;
+}
+
+.map-help-card {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  width: 250px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(7, 43, 32, 0.2);
+  padding: 10px 12px;
+  backdrop-filter: blur(8px);
+}
+
+.map-help-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #123a2a;
+  margin-bottom: 6px;
+}
+
+.map-help-card p {
+  margin: 2px 0;
+  color: #224a39;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.map-info-popup {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  z-index: 3;
+  min-width: 190px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(7, 43, 32, 0.2);
+  padding: 10px 12px;
+  backdrop-filter: blur(8px);
+}
+
+.map-info-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #123a2a;
+  margin-bottom: 4px;
+}
+
+.map-info-row {
+  font-size: 0.78rem;
+  color: #224a39;
+  margin: 2px 0;
+}
+
+.map-info-alert {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b62020;
+}
+
+.map-info-types {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.map-type-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #8f1919;
+  background: rgba(220, 67, 67, 0.12);
+  border: 1px solid rgba(220, 67, 67, 0.38);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.dhaka-map-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 540px;
+  border-radius: 12px;
+}
+
+.dhaka-map-base {
+  fill: #edf2eb;
+  stroke: #c8d5cb;
+  stroke-width: 0.5;
+}
+
+.dhaka-map-shape {
+  fill: rgba(57, 105, 84, 0.09);
+  stroke: rgba(28, 77, 59, 0.35);
+  stroke-width: 0.42;
+}
+
+.dhaka-map-shape-secondary {
+  fill: rgba(57, 105, 84, 0.06);
+  stroke: rgba(28, 77, 59, 0.24);
+  stroke-width: 0.36;
+}
+
+.map-node {
+  cursor: pointer;
+}
+
+.map-node-dot {
+  fill: #2f5a46;
+  stroke: #eff8f1;
+  stroke-width: 0.45;
+  transition: transform 0.15s ease, fill 0.15s ease;
+}
+
+.map-node:hover .map-node-dot {
+  fill: #39755a;
+}
+
+.map-node.is-selected .map-node-dot {
+  stroke: #d5f1e3;
+  stroke-width: 0.7;
+}
+
+.map-node.is-match .map-node-dot {
+  fill: #d63a3a;
+  stroke: #fff1f1;
+}
+
+.map-node.is-match:hover .map-node-dot,
+.map-node.is-match.is-selected .map-node-dot {
+  fill: #b61d1d;
+}
+
+.map-node-index {
+  fill: #ffffff;
+  font-size: 2.4px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.map-alert-badge circle {
+  fill: #e04343;
+  stroke: #ffe4e4;
+  stroke-width: 0.35;
+}
+
+.map-alert-badge text {
+  fill: #fff;
+  font-size: 1.55px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-weight: 800;
+}
+
+.thana-panel {
+  border-radius: 14px;
+  border: 1px solid rgba(7, 43, 32, 0.18);
+  background: linear-gradient(145deg, rgba(247, 242, 210, 0.82) 0%, rgba(233, 225, 190, 0.78) 100%);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.thana-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #123a2a;
+}
+
+.thana-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 500px;
+  padding-right: 2px;
+}
+
+.thana-item {
+  border: 1px solid rgba(7, 43, 32, 0.16);
+  background: rgba(255, 255, 255, 0.58);
+  border-radius: 10px;
+  padding: 8px 9px;
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.thana-item:hover,
+.thana-item.is-active {
+  border-color: rgba(32, 98, 70, 0.55);
+  background: rgba(241, 252, 246, 0.84);
+}
+
+.thana-item.is-selected {
+  border-color: rgba(32, 98, 70, 0.78);
+  box-shadow: 0 0 0 2px rgba(32, 98, 70, 0.12);
+}
+
+.thana-index {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #2f5a46;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.thana-name {
+  color: #123a2a;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.thana-count {
+  color: #123a2a;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: rgba(47, 90, 70, 0.12);
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.thana-alert-pill {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff;
+  background: #d93d3d;
+  border-radius: 999px;
+  padding: 2px 7px;
+  letter-spacing: 0.02em;
+}
+
+.dhaka-map-legend {
+  font-size: 0.78rem;
+  color: #244a3a;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 7px;
+}
+
+.legend-dot.big {
+  width: 12px;
+  height: 12px;
+  background: rgba(37, 134, 187, 0.45);
+  border: 1px solid rgba(31, 103, 145, 0.7);
+}
+
+.legend-dot.small {
+  background: #2f5a46;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
 
 .scroll-indicator {
   width: 10px;
@@ -628,6 +919,28 @@ select option {
 
   .map-placeholder {
     aspect-ratio: 2 / 1;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .dhaka-map-wrap {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .dhaka-map-svg {
+    min-height: 420px;
+  }
+
+  .map-help-card,
+  .map-info-popup {
+    position: static;
+    width: auto;
+    margin-bottom: 8px;
+  }
+
+  .thana-list {
+    max-height: 230px;
   }
 }
 
@@ -653,7 +966,7 @@ select option {
 
 /* Map page specific styles */
 .map-sidebar {
-  width: 320px;
+  width: 280px;
   background: var(--accent-green);
   color: #eaf2e8;
   padding: 18px 16px;
@@ -702,6 +1015,59 @@ select option {
   border-radius: 6px;
 }
 
+.thana-crimes-panel {
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.thana-crimes-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.thana-crimes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.thana-crime-link {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.thana-crime-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(0, 0, 0, 0.24);
+}
+
+.thana-crime-meta {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.no-thana-crimes {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
 .search-button {
   width: 100%;
   padding: 10px;
@@ -717,16 +1083,17 @@ select option {
 }
 
 .map-placeholder.large {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 10;
+  min-height: 650px;
   border-radius: 22px;
 }
 
 /* Make layout use sidebar + map */
 .home-content {
   display: flex;
-  max-width: 1200px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 100px 20px 40px;
+  padding: 20px 20px 40px;
   gap: 30px;
   position: relative;
 }
@@ -738,7 +1105,7 @@ select option {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 100px 20px 40px;
+  padding: 20px 20px 40px;
 }
 
 .report-panel {
@@ -832,7 +1199,7 @@ select option {
 /* Profile Page Styles */
 .profile-container {
   max-width: 1200px;
-  margin: 120px auto 80px;
+  margin: 0 auto 80px;
   padding: 0 20px;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -873,6 +1240,16 @@ select option {
   cursor: pointer;
 }
 
+.home-page.theme-officer .avatar-wrap {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.3) 0%, rgba(142, 157, 255, 0.25) 100%);
+  border-color: rgba(102, 236, 255, 0.6);
+}
+
+.home-page.theme-admin .avatar-wrap {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.3) 0%, rgba(62, 255, 138, 0.25) 100%);
+  border-color: rgba(102, 255, 180, 0.6);
+}
+
 .avatar-wrap:hover {
   box-shadow: 0 12px 32px rgba(7, 43, 32, 0.25);
   transform: translateY(-4px);
@@ -898,6 +1275,16 @@ select option {
   width: 80px;
   height: 80px;
   color: #2f5a46;
+}
+
+.home-page.theme-officer .avatar-placeholder,
+.home-page.theme-officer .avatar-placeholder svg {
+  color: rgba(102, 236, 255, 0.7);
+}
+
+.home-page.theme-admin .avatar-placeholder,
+.home-page.theme-admin .avatar-placeholder svg {
+  color: rgba(102, 255, 180, 0.7);
 }
 
 .add-photo-btn {
@@ -1131,4 +1518,890 @@ select option {
 
 .btn-remove-user:hover {
   background: #c82333;
+}
+
+/* ======== Role-Based Post-Login Themes ======== */
+/* Citizens keep the original green+beige design via base styles.
+   Officer/Admin classes below override only when needed. */
+
+/* Officer theme: blue neon glass */
+.home-page.theme-officer,
+.officers-page.theme-officer {
+  --officer-primary: #66ecff;
+  --officer-secondary: #8e9dff;
+  --officer-soft: #b7dcff;
+  --officer-text: #eaf8ff;
+  --officer-muted: #bed7ea;
+  --officer-border: rgba(102, 236, 255, 0.35);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(102, 236, 255, 0.2) 0%, rgba(102, 236, 255, 0) 34%),
+    radial-gradient(circle at 84% 22%, rgba(142, 157, 255, 0.22) 0%, rgba(142, 157, 255, 0) 40%),
+    radial-gradient(circle at 54% 86%, rgba(151, 239, 255, 0.14) 0%, rgba(151, 239, 255, 0) 36%),
+    linear-gradient(145deg, #040713 0%, #08142b 46%, #0a1f40 100%);
+  color: var(--officer-text);
+}
+
+.home-page.theme-officer .navbar,
+.officers-page.theme-officer .navbar {
+  background: linear-gradient(135deg, rgba(8, 20, 42, 0.8) 0%, rgba(11, 30, 62, 0.68) 100%);
+  border-bottom: 1px solid var(--officer-border);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 20px rgba(102, 236, 255, 0.14), 0 14px 36px rgba(3, 8, 20, 0.45);
+}
+
+.home-page.theme-officer .nav-btn,
+.home-page.theme-officer .login-button,
+.home-page.theme-officer .verify-button,
+.home-page.theme-officer .toggle-users-btn,
+.home-page.theme-officer .btn-remove-user,
+.officers-page.theme-officer .nav-btn,
+.officers-page.theme-officer .btn-assign,
+.officers-page.theme-officer .btn-confirm,
+.officers-page.theme-officer .btn-delete-confirm,
+.officers-page.theme-officer .btn-cancel {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.18) 0%, rgba(142, 157, 255, 0.2) 100%);
+  color: #ecfbff;
+  border: 1px solid rgba(102, 236, 255, 0.48);
+  box-shadow: 0 8px 20px rgba(3, 10, 25, 0.4);
+}
+
+.home-page.theme-officer .nav-btn:hover,
+.home-page.theme-officer .login-button:hover,
+.home-page.theme-officer .verify-button:hover,
+.home-page.theme-officer .toggle-users-btn:hover,
+.home-page.theme-officer .btn-remove-user:hover,
+.officers-page.theme-officer .nav-btn:hover,
+.officers-page.theme-officer .btn-assign:hover,
+.officers-page.theme-officer .btn-confirm:hover,
+.officers-page.theme-officer .btn-delete-confirm:hover,
+.officers-page.theme-officer .btn-cancel:hover {
+  border-color: rgba(151, 239, 255, 0.9);
+  box-shadow: 0 0 18px rgba(102, 236, 255, 0.42), 0 0 34px rgba(142, 157, 255, 0.22), 0 12px 30px rgba(3, 10, 25, 0.54);
+  transform: translateY(-2px);
+}
+
+.home-page.theme-officer .nav-btn.active,
+.officers-page.theme-officer .nav-btn.active {
+  background: linear-gradient(135deg, rgba(151, 239, 255, 0.28) 0%, rgba(102, 236, 255, 0.24) 100%);
+  color: #f1ffff;
+  border-color: rgba(151, 239, 255, 0.9);
+  box-shadow: 0 0 24px rgba(102, 236, 255, 0.38), inset 0 0 14px rgba(151, 239, 255, 0.12);
+}
+
+.home-page.theme-officer .crime-card,
+.home-page.theme-officer .map-placeholder,
+.home-page.theme-officer .map-sidebar,
+.home-page.theme-officer .report-panel,
+.home-page.theme-officer .profile-panel,
+.home-page.theme-officer .history-panel,
+.home-page.theme-officer .users-management-panel,
+.officers-page.theme-officer .officer-card,
+.officers-page.theme-officer .modal-content {
+  background: linear-gradient(145deg, rgba(11, 28, 54, 0.74) 0%, rgba(8, 20, 43, 0.66) 100%);
+  border: 1px solid var(--officer-border);
+  box-shadow: 0 16px 34px rgba(2, 7, 20, 0.5);
+  backdrop-filter: blur(16px);
+}
+
+.home-page.theme-officer .crime-card:hover,
+.home-page.theme-officer .map-placeholder:hover,
+.home-page.theme-officer .profile-panel:hover,
+.home-page.theme-officer .history-panel:hover,
+.home-page.theme-officer .users-management-panel:hover,
+.officers-page.theme-officer .officer-card:hover,
+.officers-page.theme-officer .modal-content:hover {
+  border-color: rgba(102, 236, 255, 0.68);
+  box-shadow: 0 0 22px rgba(102, 236, 255, 0.26), 0 0 40px rgba(142, 157, 255, 0.16), 0 18px 38px rgba(2, 7, 20, 0.6);
+}
+
+.home-page.theme-officer .crime-title,
+.home-page.theme-officer .panel-heading,
+.home-page.theme-officer .crime-desc-title,
+.home-page.theme-officer .crime-type,
+.home-page.theme-officer .crime-officer,
+.home-page.theme-officer .history-title,
+.home-page.theme-officer .user-name,
+.officers-page.theme-officer .officers-header h1,
+.officers-page.theme-officer .officer-header h3 {
+  color: var(--officer-text);
+  text-shadow: 0 0 14px rgba(102, 236, 255, 0.22);
+}
+
+.home-page.theme-officer .crime-title {
+  text-decoration-color: #9fddff;
+}
+
+.home-page.theme-officer .crime-meta,
+.home-page.theme-officer .crime-location,
+.home-page.theme-officer .crime-description,
+.home-page.theme-officer .history-meta,
+.home-page.theme-officer .history-sub,
+.home-page.theme-officer .user-meta,
+.home-page.theme-officer .user-email,
+.home-page.theme-officer .search-by,
+.home-page.theme-officer .filter-title,
+.home-page.theme-officer .panel-note,
+.home-page.theme-officer .profile-username,
+.home-page.theme-officer .profile-role,
+.officers-page.theme-officer .officers-header p,
+.officers-page.theme-officer .officer-details p {
+  color: var(--officer-muted);
+}
+
+.home-page.theme-officer .search-input {
+  background: rgba(11, 26, 56, 0.82);
+  color: #def8ff;
+  border: 1px solid rgba(102, 236, 255, 0.4);
+}
+
+.home-page.theme-officer .search-input::placeholder {
+  color: rgba(218, 246, 255, 0.55);
+}
+
+.home-page.theme-officer .search-button {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.2) 0%, rgba(142, 157, 255, 0.24) 100%);
+  color: #ecfbff;
+  border: 1px solid rgba(102, 236, 255, 0.48);
+  box-shadow: 0 8px 20px rgba(3, 10, 25, 0.4);
+}
+
+.home-page.theme-officer .search-button:hover {
+  border-color: rgba(151, 239, 255, 0.9);
+  box-shadow: 0 0 18px rgba(102, 236, 255, 0.42), 0 0 30px rgba(142, 157, 255, 0.2), 0 12px 30px rgba(3, 10, 25, 0.54);
+}
+
+.home-page.theme-officer .filter-item span,
+.home-page.theme-officer .filter-item input,
+.home-page.theme-officer .map-sidebar h3 {
+  color: #eaf8ff;
+}
+
+.home-page.theme-officer .field-input,
+.home-page.theme-officer .profile-form .field-input,
+.home-page.theme-officer .report-form .field-input,
+.home-page.theme-officer .nav-search-input,
+.home-page.theme-officer select,
+.officers-page.theme-officer select {
+  background: rgba(11, 26, 56, 0.82);
+  color: #def8ff;
+  border: 1px solid rgba(102, 236, 255, 0.4);
+}
+
+.home-page.theme-officer select,
+.officers-page.theme-officer select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2399e7ff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
+
+.home-page.theme-officer .field-input:focus,
+.home-page.theme-officer .profile-form .field-input:focus,
+.home-page.theme-officer .report-form .field-input:focus,
+.home-page.theme-officer .nav-search-input:focus,
+.home-page.theme-officer select:focus,
+.officers-page.theme-officer select:focus {
+  border-color: rgba(151, 239, 255, 0.92);
+  box-shadow: 0 0 0 3px rgba(102, 236, 255, 0.2), 0 0 18px rgba(102, 236, 255, 0.24);
+  outline: none;
+}
+
+.home-page.theme-officer .nav-search-input::placeholder,
+.home-page.theme-officer .field-input::placeholder {
+  color: rgba(218, 246, 255, 0.55);
+}
+
+.home-page.theme-officer .dropdown-menu,
+.officers-page.theme-officer .dropdown-menu {
+  background: linear-gradient(160deg, rgba(8, 20, 42, 0.95) 0%, rgba(10, 26, 52, 0.94) 100%);
+  border: 1px solid rgba(102, 236, 255, 0.34);
+  box-shadow: 0 0 20px rgba(102, 236, 255, 0.2), 0 10px 24px rgba(2, 7, 20, 0.62);
+}
+
+.home-page.theme-officer .dropdown-menu a,
+.officers-page.theme-officer .dropdown-menu a {
+  color: #e6f8ff;
+}
+
+.home-page.theme-officer .dropdown-menu a:hover,
+.officers-page.theme-officer .dropdown-menu a:hover {
+  background: rgba(102, 236, 255, 0.12);
+}
+
+.home-page.theme-officer .profile-btn,
+.officers-page.theme-officer .profile-btn {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.2) 0%, rgba(142, 157, 255, 0.24) 100%);
+  color: #ecfbff;
+  border: 1px solid rgba(102, 236, 255, 0.46);
+  box-shadow: 0 0 14px rgba(102, 236, 255, 0.3);
+}
+
+.home-page.theme-officer .profile-btn:hover,
+.officers-page.theme-officer .profile-btn:hover {
+  box-shadow: 0 0 20px rgba(102, 236, 255, 0.44), 0 0 32px rgba(142, 157, 255, 0.2);
+}
+
+.home-page.theme-officer .toggle-btn {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.2) 0%, rgba(142, 157, 255, 0.24) 100%);
+  color: #ecfbff;
+  border: 1px solid rgba(102, 236, 255, 0.48);
+}
+
+.home-page.theme-officer .toggle-btn.active {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.4) 0%, rgba(142, 157, 255, 0.38) 100%);
+  color: #f1ffff;
+  border-color: rgba(102, 236, 255, 0.72);
+  box-shadow: 0 0 16px rgba(102, 236, 255, 0.28);
+}
+
+.home-page.theme-officer .toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 236, 255, 0.3) 0%, rgba(142, 157, 255, 0.32) 100%);
+  border-color: rgba(102, 236, 255, 0.68);
+  box-shadow: 0 0 12px rgba(102, 236, 255, 0.2);
+}
+
+.home-page.theme-officer .status-pending {
+  background: linear-gradient(135deg, #7fc7ff 0%, #68b8fa 100%);
+  color: #072039;
+}
+
+.home-page.theme-officer .status-verified {
+  background: linear-gradient(135deg, #4ab7ff 0%, #2a8edd 100%);
+}
+
+.home-page.theme-officer .status-closed {
+  background: linear-gradient(135deg, #9ea6d9 0%, #7f86c2 100%);
+  color: #f2f6ff;
+}
+
+.home-page.theme-officer .fade-overlay,
+.officers-page.theme-officer .fade-overlay {
+  background: linear-gradient(to bottom, transparent 0%, rgba(4, 12, 30, 0.58) 100%);
+}
+
+.home-page.theme-officer select option,
+.officers-page.theme-officer select option {
+  background: #112a52;
+  color: #e6f8ff;
+}
+
+/* Admin theme: neon green glass */
+.home-page.theme-admin,
+.officers-page.theme-admin {
+  --admin-neon: #66ffb4;
+  --admin-neon-2: #3eff8a;
+  --admin-glow: #b4ffd7;
+  --admin-text: #ecfff5;
+  --admin-muted: #b9e8cb;
+  --admin-border: rgba(102, 255, 180, 0.38);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(102, 255, 180, 0.22) 0%, rgba(102, 255, 180, 0) 36%),
+    radial-gradient(circle at 82% 18%, rgba(62, 255, 138, 0.18) 0%, rgba(62, 255, 138, 0) 38%),
+    radial-gradient(circle at 52% 84%, rgba(180, 255, 215, 0.12) 0%, rgba(180, 255, 215, 0) 36%),
+    linear-gradient(145deg, #03140e 0%, #07281b 46%, #0a3825 100%);
+  color: var(--admin-text);
+}
+
+.home-page.theme-admin .navbar,
+.officers-page.theme-admin .navbar {
+  background: linear-gradient(135deg, rgba(6, 35, 24, 0.82) 0%, rgba(8, 48, 32, 0.7) 100%);
+  border-bottom: 1px solid var(--admin-border);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 20px rgba(102, 255, 180, 0.16), 0 14px 36px rgba(3, 10, 7, 0.45);
+}
+
+.home-page.theme-admin .nav-btn,
+.home-page.theme-admin .login-button,
+.home-page.theme-admin .verify-button,
+.home-page.theme-admin .toggle-users-btn,
+.home-page.theme-admin .btn-remove-user,
+.officers-page.theme-admin .nav-btn,
+.officers-page.theme-admin .btn-assign,
+.officers-page.theme-admin .btn-confirm,
+.officers-page.theme-admin .btn-delete-confirm,
+.officers-page.theme-admin .btn-cancel,
+.officers-page.theme-admin .message-banner.success {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.18) 0%, rgba(62, 255, 138, 0.22) 100%);
+  color: #effff6;
+  border: 1px solid rgba(102, 255, 180, 0.5);
+  box-shadow: 0 8px 20px rgba(3, 12, 8, 0.42);
+}
+
+.home-page.theme-admin .nav-btn:hover,
+.home-page.theme-admin .login-button:hover,
+.home-page.theme-admin .verify-button:hover,
+.home-page.theme-admin .toggle-users-btn:hover,
+.home-page.theme-admin .btn-remove-user:hover,
+.officers-page.theme-admin .nav-btn:hover,
+.officers-page.theme-admin .btn-assign:hover,
+.officers-page.theme-admin .btn-confirm:hover,
+.officers-page.theme-admin .btn-delete-confirm:hover,
+.officers-page.theme-admin .btn-cancel:hover {
+  border-color: rgba(180, 255, 215, 0.95);
+  box-shadow: 0 0 20px rgba(102, 255, 180, 0.44), 0 0 34px rgba(62, 255, 138, 0.24), 0 12px 30px rgba(3, 12, 8, 0.56);
+  transform: translateY(-2px);
+}
+
+.home-page.theme-admin .nav-btn.active,
+.officers-page.theme-admin .nav-btn.active {
+  background: linear-gradient(135deg, rgba(180, 255, 215, 0.28) 0%, rgba(102, 255, 180, 0.22) 100%);
+  color: #f3fff8;
+  border-color: rgba(180, 255, 215, 0.95);
+  box-shadow: 0 0 24px rgba(102, 255, 180, 0.4), inset 0 0 14px rgba(180, 255, 215, 0.1);
+}
+
+.home-page.theme-admin .crime-card,
+.home-page.theme-admin .map-placeholder,
+.home-page.theme-admin .map-sidebar,
+.home-page.theme-admin .report-panel,
+.home-page.theme-admin .profile-panel,
+.home-page.theme-admin .history-panel,
+.home-page.theme-admin .users-management-panel,
+.officers-page.theme-admin .officer-card,
+.officers-page.theme-admin .modal-content,
+.officers-page.theme-admin .officers-sticky-header {
+  background: linear-gradient(145deg, rgba(8, 36, 25, 0.74) 0%, rgba(7, 25, 17, 0.66) 100%);
+  border: 1px solid var(--admin-border);
+  box-shadow: 0 16px 34px rgba(2, 10, 6, 0.5);
+  backdrop-filter: blur(16px);
+}
+
+.home-page.theme-admin .crime-card:hover,
+.home-page.theme-admin .map-placeholder:hover,
+.home-page.theme-admin .profile-panel:hover,
+.home-page.theme-admin .history-panel:hover,
+.home-page.theme-admin .users-management-panel:hover,
+.officers-page.theme-admin .officer-card:hover,
+.officers-page.theme-admin .modal-content:hover {
+  border-color: rgba(102, 255, 180, 0.7);
+  box-shadow: 0 0 24px rgba(102, 255, 180, 0.28), 0 0 40px rgba(62, 255, 138, 0.2), 0 18px 38px rgba(2, 10, 6, 0.6);
+}
+
+.home-page.theme-admin .crime-title,
+.home-page.theme-admin .panel-heading,
+.home-page.theme-admin .crime-desc-title,
+.home-page.theme-admin .crime-type,
+.home-page.theme-admin .crime-officer,
+.home-page.theme-admin .history-title,
+.home-page.theme-admin .user-name,
+.officers-page.theme-admin .officers-header h1,
+.officers-page.theme-admin .officer-header h3 {
+  color: var(--admin-text);
+  text-shadow: 0 0 14px rgba(102, 255, 180, 0.24);
+}
+
+.home-page.theme-admin .crime-title {
+  text-decoration-color: #9dffd2;
+}
+
+.home-page.theme-admin .crime-meta,
+.home-page.theme-admin .crime-location,
+.home-page.theme-admin .crime-description,
+.home-page.theme-admin .history-meta,
+.home-page.theme-admin .history-sub,
+.home-page.theme-admin .user-meta,
+.home-page.theme-admin .user-email,
+.home-page.theme-admin .search-by,
+.home-page.theme-admin .filter-title,
+.home-page.theme-admin .panel-note,
+.home-page.theme-admin .profile-username,
+.home-page.theme-admin .profile-role,
+.officers-page.theme-admin .officers-header p,
+.officers-page.theme-admin .officer-details p {
+  color: var(--admin-muted);
+}
+
+.officers-page.theme-admin .officer-details p {
+  color: #f0fff7 !important;
+}
+
+.officers-page.theme-admin .officer-details p strong {
+  color: #e0ffe8 !important;
+  font-weight: 700;
+}
+
+.officers-page.theme-admin .officer-header h3 {
+  color: #f5fffa !important;
+}
+
+.home-page.theme-admin .profile-admin-id,
+.home-page.theme-admin .profile-admin-date {
+  color: #eafff3;
+  border-left-color: rgba(102, 255, 180, 0.8);
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.2) 0%, rgba(15, 59, 40, 0.65) 100%);
+  box-shadow: 0 0 14px rgba(102, 255, 180, 0.2);
+}
+
+.home-page.theme-admin .search-input {
+  background: rgba(7, 35, 24, 0.82);
+  color: #e9fff3;
+  border: 1px solid rgba(102, 255, 180, 0.42);
+}
+
+.home-page.theme-admin .search-input::placeholder {
+  color: rgba(222, 255, 236, 0.55);
+}
+
+.home-page.theme-admin .search-button {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.18) 0%, rgba(62, 255, 138, 0.22) 100%);
+  color: #effff6;
+  border: 1px solid rgba(102, 255, 180, 0.5);
+  box-shadow: 0 8px 20px rgba(3, 12, 8, 0.42);
+}
+
+.home-page.theme-admin .search-button:hover {
+  border-color: rgba(180, 255, 215, 0.95);
+  box-shadow: 0 0 20px rgba(102, 255, 180, 0.44), 0 0 32px rgba(62, 255, 138, 0.2), 0 12px 30px rgba(3, 12, 8, 0.56);
+}
+
+.home-page.theme-admin .filter-item span,
+.home-page.theme-admin .filter-item input,
+.home-page.theme-admin .map-sidebar h3 {
+  color: #ecfff5;
+}
+
+.home-page.theme-admin .field-input,
+.home-page.theme-admin .profile-form .field-input,
+.home-page.theme-admin .report-form .field-input,
+.home-page.theme-admin .nav-search-input,
+.home-page.theme-admin select,
+.officers-page.theme-admin select,
+.officers-page.theme-admin .nav-search-input {
+  background: rgba(7, 35, 24, 0.82);
+  color: #e9fff3;
+  border: 1px solid rgba(102, 255, 180, 0.42);
+}
+
+.home-page.theme-admin select,
+.officers-page.theme-admin select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23b6ffd8' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
+
+.home-page.theme-admin .field-input:focus,
+.home-page.theme-admin .profile-form .field-input:focus,
+.home-page.theme-admin .report-form .field-input:focus,
+.home-page.theme-admin .nav-search-input:focus,
+.home-page.theme-admin select:focus,
+.officers-page.theme-admin select:focus,
+.officers-page.theme-admin .nav-search-input:focus {
+  border-color: rgba(180, 255, 215, 0.94);
+  box-shadow: 0 0 0 3px rgba(102, 255, 180, 0.2), 0 0 18px rgba(102, 255, 180, 0.24);
+  outline: none;
+}
+
+.home-page.theme-admin .nav-search-input::placeholder,
+.home-page.theme-admin .field-input::placeholder,
+.officers-page.theme-admin .nav-search-input::placeholder {
+  color: rgba(222, 255, 236, 0.55);
+}
+
+.home-page.theme-admin .dropdown-menu,
+.officers-page.theme-admin .dropdown-menu {
+  background: linear-gradient(160deg, rgba(7, 28, 19, 0.95) 0%, rgba(9, 38, 26, 0.94) 100%);
+  border: 1px solid rgba(102, 255, 180, 0.36);
+  box-shadow: 0 0 20px rgba(102, 255, 180, 0.22), 0 10px 24px rgba(2, 10, 6, 0.64);
+}
+
+.home-page.theme-admin .dropdown-menu a,
+.officers-page.theme-admin .dropdown-menu a {
+  color: #e9fff4;
+}
+
+.home-page.theme-admin .dropdown-menu a:hover,
+.officers-page.theme-admin .dropdown-menu a:hover {
+  background: rgba(102, 255, 180, 0.12);
+}
+
+.home-page.theme-admin .profile-btn,
+.officers-page.theme-admin .profile-btn {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.2) 0%, rgba(62, 255, 138, 0.24) 100%);
+  color: #f0fff6;
+  border: 1px solid rgba(102, 255, 180, 0.5);
+  box-shadow: 0 0 14px rgba(102, 255, 180, 0.32);
+}
+
+.home-page.theme-admin .profile-btn:hover,
+.officers-page.theme-admin .profile-btn:hover {
+  box-shadow: 0 0 22px rgba(102, 255, 180, 0.46), 0 0 34px rgba(62, 255, 138, 0.22);
+}
+
+.home-page.theme-admin .toggle-btn {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.2) 0%, rgba(62, 255, 138, 0.24) 100%);
+  color: #effff6;
+  border: 1px solid rgba(102, 255, 180, 0.5);
+}
+
+.home-page.theme-admin .toggle-btn.active {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.4) 0%, rgba(62, 255, 138, 0.38) 100%);
+  color: #f3fff8;
+  border-color: rgba(180, 255, 215, 0.9);
+  box-shadow: 0 0 16px rgba(102, 255, 180, 0.3);
+}
+
+.home-page.theme-admin .toggle-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 255, 180, 0.3) 0%, rgba(62, 255, 138, 0.32) 100%);
+  border-color: rgba(102, 255, 180, 0.72);
+  box-shadow: 0 0 12px rgba(102, 255, 180, 0.24);
+}
+
+.home-page.theme-admin .status-pending {
+  background: linear-gradient(135deg, #bfffe0 0%, #96f9cb 100%);
+  color: #063523;
+}
+
+.home-page.theme-admin .status-verified {
+  background: linear-gradient(135deg, #46f7a1 0%, #25d97f 100%);
+  color: #062d1d;
+}
+
+.home-page.theme-admin .status-closed {
+  background: linear-gradient(135deg, #7ddcae 0%, #5ac78e 100%);
+  color: #073624;
+}
+
+.home-page.theme-admin .fade-overlay,
+.officers-page.theme-admin .fade-overlay {
+  background: linear-gradient(to bottom, transparent 0%, rgba(3, 18, 12, 0.58) 100%);
+}
+
+/* Officers Page Base Styles */
+.officers-sticky-header {
+  position: sticky;
+  top: 70px;
+  padding: 8px 32px;
+  margin: 0 0 20px 0;
+  z-index: 10;
+}
+
+.officers-header {
+  margin: 0;
+}
+
+.officers-header h1 {
+  margin: 0 0 4px 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.officers-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.officers-content {
+  padding: 0 32px 40px 32px;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.officers-container {
+  width: 100%;
+  padding: 20px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.officers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.officer-card {
+  padding: 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin: 0;
+}
+
+.officer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.officer-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.officer-region {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.officer-details {
+  margin: 12px 0;
+  padding: 0;
+}
+
+.officer-details p {
+  margin: 6px 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #caf3e8 !important;
+}
+
+.officer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.btn-assign,
+.btn-delete,
+.btn-cancel,
+.btn-confirm,
+.btn-delete-confirm {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loading,
+.no-officers,
+.no-crimes {
+  padding: 20px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.home-page.theme-admin select option,
+.officers-page.theme-admin select option {
+  background: #113d2b;
+  color: #e8fff3;
+}
+
+.home-page.theme-officer .dhaka-map-canvas,
+.home-page.theme-officer .thana-panel {
+  border-color: rgba(102, 236, 255, 0.36);
+  background: linear-gradient(145deg, rgba(9, 24, 48, 0.8) 0%, rgba(10, 30, 58, 0.76) 100%);
+}
+
+.home-page.theme-officer .map-help-card,
+.home-page.theme-officer .map-info-popup {
+  background: rgba(13, 33, 62, 0.9);
+  border-color: rgba(102, 236, 255, 0.36);
+}
+
+.home-page.theme-officer .map-help-title,
+.home-page.theme-officer .map-help-card p,
+.home-page.theme-officer .map-info-title,
+.home-page.theme-officer .map-info-row {
+  color: #e7f9ff;
+}
+
+.home-page.theme-officer .map-info-alert {
+  color: #ff8d8d;
+}
+
+.home-page.theme-officer .dhaka-map-base {
+  fill: #0f2344;
+  stroke: rgba(130, 218, 255, 0.35);
+}
+
+.home-page.theme-officer .dhaka-map-shape {
+  fill: rgba(102, 236, 255, 0.12);
+  stroke: rgba(151, 239, 255, 0.36);
+}
+
+.home-page.theme-officer .dhaka-map-shape-secondary {
+  fill: rgba(142, 157, 255, 0.12);
+  stroke: rgba(142, 157, 255, 0.32);
+}
+
+.home-page.theme-officer .map-node-dot {
+  fill: #72e9ff;
+  stroke: #def8ff;
+}
+
+.home-page.theme-officer .map-node:hover .map-node-dot {
+  fill: #4dd7f4;
+}
+
+.home-page.theme-officer .map-node.is-selected .map-node-dot {
+  stroke: #e8fbff;
+}
+
+.home-page.theme-officer .map-node.is-match .map-node-dot {
+  fill: #d63a3a;
+  stroke: #ffdede;
+}
+
+.home-page.theme-officer .map-node.is-match:hover .map-node-dot,
+.home-page.theme-officer .map-node.is-match.is-selected .map-node-dot {
+  fill: #b61d1d;
+}
+
+.home-page.theme-officer .thana-index {
+  background: #72e9ff;
+  color: #0b2747;
+}
+
+.home-page.theme-officer .thana-panel-title,
+.home-page.theme-officer .thana-name,
+.home-page.theme-officer .thana-count,
+.home-page.theme-officer .dhaka-map-legend {
+  color: #e7f9ff;
+}
+
+.home-page.theme-officer .thana-item {
+  border-color: rgba(102, 236, 255, 0.24);
+  background: rgba(16, 38, 70, 0.72);
+}
+
+.home-page.theme-officer .thana-crimes-panel {
+  border-color: rgba(102, 236, 255, 0.32);
+  background: rgba(10, 28, 56, 0.64);
+}
+
+.home-page.theme-officer .thana-crime-link {
+  border-color: rgba(102, 236, 255, 0.32);
+  background: rgba(18, 44, 84, 0.74);
+  color: #e7f9ff;
+}
+
+.home-page.theme-officer .thana-crime-link:hover {
+  border-color: rgba(151, 239, 255, 0.62);
+  background: rgba(26, 60, 110, 0.82);
+}
+
+.home-page.theme-officer .thana-item:hover,
+.home-page.theme-officer .thana-item.is-active {
+  border-color: rgba(151, 239, 255, 0.72);
+  background: rgba(20, 52, 92, 0.82);
+}
+
+.home-page.theme-officer .thana-count {
+  background: rgba(102, 236, 255, 0.18);
+}
+
+.home-page.theme-admin .dhaka-map-canvas,
+.home-page.theme-admin .thana-panel {
+  border-color: rgba(102, 255, 180, 0.36);
+  background: linear-gradient(145deg, rgba(7, 30, 20, 0.8) 0%, rgba(8, 36, 25, 0.76) 100%);
+}
+
+.home-page.theme-admin .map-help-card,
+.home-page.theme-admin .map-info-popup {
+  background: rgba(10, 39, 27, 0.9);
+  border-color: rgba(102, 255, 180, 0.34);
+}
+
+.home-page.theme-admin .map-help-title,
+.home-page.theme-admin .map-help-card p,
+.home-page.theme-admin .map-info-title,
+.home-page.theme-admin .map-info-row {
+  color: #eafff3;
+}
+
+.home-page.theme-admin .map-info-alert {
+  color: #ff9b9b;
+}
+
+.home-page.theme-admin .dhaka-map-base {
+  fill: #0d2d1f;
+  stroke: rgba(165, 255, 208, 0.34);
+}
+
+.home-page.theme-admin .dhaka-map-shape {
+  fill: rgba(102, 255, 180, 0.12);
+  stroke: rgba(160, 255, 208, 0.34);
+}
+
+.home-page.theme-admin .dhaka-map-shape-secondary {
+  fill: rgba(62, 255, 138, 0.11);
+  stroke: rgba(102, 255, 180, 0.32);
+}
+
+.home-page.theme-admin .map-node-dot {
+  fill: #7bffc1;
+  stroke: #e7fff3;
+}
+
+.home-page.theme-admin .map-node:hover .map-node-dot {
+  fill: #5bebb0;
+}
+
+.home-page.theme-admin .map-node.is-selected .map-node-dot {
+  stroke: #f0fff7;
+}
+
+.home-page.theme-admin .map-node.is-match .map-node-dot {
+  fill: #d63a3a;
+  stroke: #ffdede;
+}
+
+.home-page.theme-admin .map-node.is-match:hover .map-node-dot,
+.home-page.theme-admin .map-node.is-match.is-selected .map-node-dot {
+  fill: #b61d1d;
+}
+
+.home-page.theme-admin .thana-index {
+  background: #7bffc1;
+  color: #0a311f;
+}
+
+.home-page.theme-admin .thana-panel-title,
+.home-page.theme-admin .thana-name,
+.home-page.theme-admin .thana-count,
+.home-page.theme-admin .dhaka-map-legend {
+  color: #eafff3;
+}
+
+.home-page.theme-admin .thana-item {
+  border-color: rgba(102, 255, 180, 0.24);
+  background: rgba(12, 44, 30, 0.72);
+}
+
+.home-page.theme-admin .thana-crimes-panel {
+  border-color: rgba(102, 255, 180, 0.34);
+  background: rgba(10, 40, 27, 0.66);
+}
+
+.home-page.theme-admin .thana-crime-link {
+  border-color: rgba(102, 255, 180, 0.3);
+  background: rgba(15, 52, 35, 0.78);
+  color: #eafff3;
+}
+
+.home-page.theme-admin .thana-crime-link:hover {
+  border-color: rgba(180, 255, 215, 0.68);
+  background: rgba(20, 66, 45, 0.84);
+}
+
+.home-page.theme-admin .thana-item:hover,
+.home-page.theme-admin .thana-item.is-active {
+  border-color: rgba(180, 255, 215, 0.7);
+  background: rgba(16, 56, 39, 0.82);
+}
+
+.home-page.theme-admin .thana-count {
+  background: rgba(102, 255, 180, 0.18);
 }

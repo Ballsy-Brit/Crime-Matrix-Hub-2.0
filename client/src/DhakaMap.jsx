@@ -1,87 +1,184 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import './App.css';
 
-// Simplified Dhaka regions with approximate coordinates for an SVG viewBox (0-100)
-// Coordinates are illustrative — not geographically accurate.
+// Simplified thana points for a clean, non-overlapping map experience.
+// Coordinates are illustrative, not a precise GIS projection.
 const REGIONS = [
-  { id: 'Uttara', x: 28, y: 12, labelOffset: { x: 4, y: -3 } },
-  { id: 'Kafrul', x: 24, y: 38, labelOffset: { x: -28, y: -8 } },
-  { id: 'Mohammadpur', x: 36, y: 44, labelOffset: { x: 6, y: -10 } },
-  { id: 'Tejgaon', x: 54, y: 50, labelOffset: { x: 6, y: 8 } },
-  { id: 'Gulshan', x: 78, y: 20, labelOffset: { x: 6, y: -6 } },
-  { id: 'Dhanmondi', x: 48, y: 36, labelOffset: { x: -42, y: -12 } },
-  { id: 'Mirpur', x: 20, y: 24, labelOffset: { x: -6, y: -8 } },
-  { id: 'Motijheel', x: 68, y: 62, labelOffset: { x: 6, y: 6 } },
-  { id: 'Ramna', x: 60, y: 36, labelOffset: { x: 6, y: -10 } },
-  { id: 'Mohakhali', x: 72, y: 30, labelOffset: { x: 6, y: -2 } },
-  { id: 'Paltan', x: 62, y: 46, labelOffset: { x: 6, y: 10 } },
-  { id: 'Savar', x: 12, y: 60, labelOffset: { x: 6, y: 6 } },
-  { id: 'Narayangonj', x: 100, y: 80, labelOffset: { x: -48, y: -8 } }
+  { id: 'Uttara', x: 44, y: 16 },
+  { id: 'Mirpur', x: 27, y: 28 },
+  { id: 'Kafrul', x: 41, y: 31 },
+  { id: 'Mohakhali', x: 56, y: 34 },
+  { id: 'Gulshan', x: 68, y: 33 },
+  { id: 'Tejgaon', x: 49, y: 41 },
+  { id: 'Dhanmondi', x: 37, y: 46 },
+  { id: 'Mohammadpur', x: 30, y: 41 },
+  { id: 'Ramna', x: 55, y: 46 },
+  { id: 'Paltan', x: 59, y: 51 },
+  { id: 'Motijheel', x: 64, y: 58 },
+  { id: 'Savar', x: 15, y: 53 },
+  { id: 'Narayangonj', x: 84, y: 62 }
 ];
 
-export default function DhakaMap({ counts = {}, filteredCounts = {}, onRegionClick }) {
-  const SCALE_X = 1.3; // spread horizontally
-  const SCALE_Y = 1.05; // slight vertical stretch
+const ALIASES = {
+  narayangonj: 'Narayangonj',
+  narayanganj: 'Narayangonj',
+};
 
-  // Utility to compute radius based on count
-  const radiusFor = (count) => {
-    const base = 6;
-    if (!count || count <= 0) return 0;
-    // scale: sqrt for diminishing returns
-    return Math.min(70, base + Math.sqrt(count) * 6);
-  };
+function normalizeRegionKey(name) {
+  const key = String(name || '').trim().toLowerCase();
+  return ALIASES[key] || name;
+}
+
+export default function DhakaMap({ counts = {}, filteredCounts = {}, crimes = [], shouldHighlight = false, onRegionClick, selectedRegion = '' }) {
+  const [hoveredRegion, setHoveredRegion] = useState('');
+
+  const normalizedCounts = Object.entries(counts).reduce((acc, [k, v]) => {
+    acc[normalizeRegionKey(k)] = v;
+    return acc;
+  }, {});
+
+  const normalizedFilteredCounts = Object.entries(filteredCounts).reduce((acc, [k, v]) => {
+    acc[normalizeRegionKey(k)] = v;
+    return acc;
+  }, {});
+
+  const rows = REGIONS.map((region, index) => {
+    const total = normalizedCounts[region.id] || 0;
+    const filtered = normalizedFilteredCounts[region.id] || 0;
+    return {
+      ...region,
+      number: index + 1,
+      total,
+      filtered,
+      emphasis: filtered > 0 ? filtered : total,
+    };
+  }).sort((a, b) => b.emphasis - a.emphasis || a.id.localeCompare(b.id));
+
+  const filteredMax = Math.max(1, ...rows.map((r) => r.filtered));
+  const alertThreshold = Math.max(1, Math.ceil(filteredMax * 0.6));
+
+  const activeInfo = useMemo(() => {
+    const focus = hoveredRegion || selectedRegion;
+    if (!focus) return null;
+    const region = rows.find((r) => r.id === focus) || null;
+    if (!region) return null;
+
+    const ongoingTypes = crimes
+      .filter((c) => normalizeRegionKey(c.region) === focus && c.status !== 'Closed')
+      .reduce((acc, c) => {
+        const key = c.crimeType || 'Other';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+
+    const ongoingEntries = Object.entries(ongoingTypes).sort((a, b) => b[1] - a[1]);
+    const ongoingCount = ongoingEntries.reduce((sum, [, count]) => sum + count, 0);
+
+    return {
+      ...region,
+      ongoingEntries,
+      ongoingCount,
+    };
+  }, [hoveredRegion, selectedRegion, rows, crimes]);
 
   return (
     <div className="dhaka-map-wrap">
-      <svg viewBox="0 0 140 110" className="dhaka-map-svg" preserveAspectRatio="xMidYMid meet">
-        {/* background grid / subtle map plate */}
-        <rect x="0" y="0" width="140" height="110" rx="6" ry="6" fill="#e9efe8" stroke="#d3d9d2" />
-
-        {/* region labels */}
-        {REGIONS.map((r) => {
-          const count = counts[r.id] || 0;
-          const fcount = filteredCounts[r.id] || 0;
-          const showHighlight = fcount > 0;
-          const rRadius = radiusFor(fcount);
-
-          const sx = r.x * SCALE_X;
-          const sy = r.y * SCALE_Y;
-
-          return (
-            <g key={r.id} className="region-group" onClick={() => onRegionClick && onRegionClick(r.id)} style={{ cursor: 'pointer' }}>
-              {/* overall background small circle indicating presence */}
-              <circle cx={`${sx}`} cy={`${sy}`} r={3.2} fill="#2f5a46" opacity={count?1:0.18} />
-
-              {/* filtered highlight - translucent red circle sized by fcount */}
-              {showHighlight && (
-                <circle cx={`${sx}`} cy={`${sy}`} r={rRadius} fill="rgba(220,50,50,0.28)" stroke="rgba(200,30,30,0.6)" />
+      <div className="dhaka-map-canvas">
+        {activeInfo && (
+          <div className="map-info-popup" role="status" aria-live="polite">
+            <div className="map-info-title">{activeInfo.id}</div>
+            <div className="map-info-row">Total Reports: <strong>{activeInfo.total}</strong></div>
+            <div className="map-info-row">Matching Filters: <strong>{activeInfo.filtered}</strong></div>
+            <div className="map-info-row">
+              {activeInfo.ongoingCount > 0 ? (
+                <span>Crime is happening here: <strong>{activeInfo.ongoingCount} ongoing</strong></span>
+              ) : (
+                <span>No ongoing crime right now</span>
               )}
+            </div>
 
-              {/* region label with translucent background to avoid overlap */}
-              {(() => {
-                const lx = sx + (r.labelOffset?.x ?? 3.5);
-                const ly = sy + (r.labelOffset?.y ?? -2);
-                const approxWidth = Math.max(24, r.id.length * 3.0);
-                return (
-                  <g>
-                    <rect x={lx - 2} y={ly - 4} width={approxWidth} height={7} rx={3} fill={"rgba(255,255,255,0.86)"} />
-                    <text x={lx + 1} y={ly + 1} fontSize="2.2" fill="#0b3a2a" fontWeight={700}>{r.id}</text>
+            {activeInfo.ongoingCount > 0 && (
+              <div className="map-info-types">
+                {activeInfo.ongoingEntries.slice(0, 3).map(([type, count]) => (
+                  <span key={type} className="map-type-chip">{type} ({count})</span>
+                ))}
+              </div>
+            )}
+
+            {activeInfo.total >= alertThreshold && <div className="map-info-alert">Alert: High activity zone</div>}
+          </div>
+        )}
+
+        <svg viewBox="0 0 100 75" className="dhaka-map-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Dhaka thana map">
+          <defs>
+            <radialGradient id="mapGlow" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stopColor="rgba(120, 210, 255, 0.22)" />
+              <stop offset="100%" stopColor="rgba(120, 210, 255, 0)" />
+            </radialGradient>
+          </defs>
+
+          <rect x="1" y="1" width="98" height="73" rx="8" className="dhaka-map-base" />
+          <ellipse cx="50" cy="40" rx="36" ry="24" className="dhaka-map-shape" />
+
+          {rows.map((region) => {
+            const isMatch = shouldHighlight && region.filtered > 0;
+            const neutralRadius = 2.45;
+            const highlightedRadius = 2.45 + (Math.sqrt(region.filtered) / Math.sqrt(filteredMax || 1)) * 2.8;
+            const r = isMatch ? highlightedRadius : neutralRadius;
+            const isSelected = selectedRegion === region.id;
+            const isAlert = isMatch && region.filtered >= alertThreshold;
+
+            return (
+              <g
+                key={region.id}
+                className={`map-node ${isMatch ? 'is-match' : ''} ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => onRegionClick && onRegionClick(region.id)}
+                onMouseEnter={() => setHoveredRegion(region.id)}
+                onMouseLeave={() => setHoveredRegion('')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && onRegionClick) {
+                    e.preventDefault();
+                    onRegionClick(region.id);
+                  }
+                }}
+              >
+                {isMatch && <circle cx={region.x} cy={region.y} r={r + 2.8} className="map-node-glow" fill="url(#mapGlow)" />}
+                <circle cx={region.x} cy={region.y} r={r} className="map-node-dot" />
+                <text x={region.x} y={region.y + 0.7} className="map-node-index">{region.number}</text>
+
+                {isAlert && (
+                  <g className="map-alert-badge" transform={`translate(${region.x + r - 0.2}, ${region.y - r + 0.5})`}>
+                    <circle cx="0" cy="0" r="1.75" />
+                    <text x="0" y="0.55">!</text>
                   </g>
-                );
-              })()}
-
-              {/* small count badge */}
-              <g transform={`translate(${sx + 2.5}, ${sy + 4})`}>
-                <rect x="-1" y="-3" width="18" height="9" rx="2" fill="rgba(0,0,0,0.06)" />
-                <text x="0" y="3.5" fontSize="3" fill="#111">{count}</text>
+                )}
               </g>
-            </g>
-          );
-        })}
-      </svg>
-      <div className="dhaka-map-legend">
-        <div><span className="legend-dot big"></span> Highlight size ∝ verified crime count</div>
-        <div><span className="legend-dot small"></span> Region marker</div>
+            );
+          })}
+        </svg>
+      </div>
+
+      <div className="thana-panel">
+        <div className="thana-panel-title">Dhaka Thanas</div>
+        <div className="thana-list" role="list">
+          {rows.map((region) => (
+            <button
+              key={region.id}
+              className={`thana-item ${shouldHighlight && region.filtered > 0 ? 'is-active' : ''} ${selectedRegion === region.id ? 'is-selected' : ''}`}
+              onClick={() => onRegionClick && onRegionClick(region.id)}
+              onMouseEnter={() => setHoveredRegion(region.id)}
+              onMouseLeave={() => setHoveredRegion('')}
+              title={`View ${region.id}`}
+            >
+              <span className="thana-index">{region.number}</span>
+              <span className="thana-name">{region.id}</span>
+              <span className="thana-count">{region.total}</span>
+              {shouldHighlight && region.filtered > 0 && <span className="thana-alert-pill">Alert</span>}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

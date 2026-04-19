@@ -3,11 +3,13 @@ import './App.css';
 
 const categories = ['All', 'Theft', 'Robbery', 'Burglary', 'Assault', 'Fraud', 'Vehicle Theft', 'Arson', 'Other'];
 
-export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavigate }) {
+export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch, initialSearchQuery }) {
+  const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
   const [crimes, setCrimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('All');
   const [sortBy, setSortBy] = useState('date'); // 'category' | 'date' | 'region'
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '');
 
   useEffect(() => {
     let mounted = true;
@@ -28,7 +30,18 @@ export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavi
     return () => { mounted = false; };
   }, []);
 
-  const filtered = crimes.filter((c) => selectedTab === 'All' ? true : c.crimeType === selectedTab);
+  useEffect(() => {
+    setSearchQuery(initialSearchQuery || '');
+  }, [initialSearchQuery]);
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+
+  const filtered = crimes.filter((c) => {
+    const matchesCategory = selectedTab === 'All' ? true : c.crimeType === selectedTab;
+    const searchable = `${c.title || ''} ${c.description || ''} ${c.crimeType || ''}`.toLowerCase();
+    const matchesSearch = !normalizedSearch || searchable.includes(normalizedSearch);
+    return matchesCategory && matchesSearch;
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'category') {
@@ -42,7 +55,7 @@ export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavi
   });
 
   return (
-    <div className="home-page">
+    <div className={`home-page ${themeClass}`}>
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">
@@ -56,7 +69,19 @@ export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavi
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="Search crimes..." aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(searchQuery);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className={`profile-btn ${isAdmin ? 'admin' : userRole === 'Officer' ? 'officer' : ''}`}>{isAdmin ? '👨‍💼' : userRole === 'Officer' ? '👮' : '👤'}</button>

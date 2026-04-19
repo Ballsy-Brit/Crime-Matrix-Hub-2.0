@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-export default function Officers({ user, onNavigate }) {
+export default function Officers({ user, onNavigate, onCrimeSearch }) {
   const [officers, setOfficers] = useState([]);
+  const [navSearch, setNavSearch] = useState('');
   const [crimes, setCrimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOfficer, setSelectedOfficer] = useState(null);
@@ -127,7 +128,7 @@ export default function Officers({ user, onNavigate }) {
   };
 
   return (
-    <div className="officers-page">
+    <div className="officers-page theme-admin">
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-buttons">
@@ -139,7 +140,19 @@ export default function Officers({ user, onNavigate }) {
           </div>
           <div className="nav-icons">
             <div className="nav-search">
-              <input className="nav-search-input" placeholder="" aria-label="Search" />
+              <input
+                className="nav-search-input"
+                placeholder="Search title, description, type..."
+                aria-label="Search crimes"
+                value={navSearch}
+                onChange={(e) => setNavSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onCrimeSearch(navSearch);
+                  }
+                }}
+              />
             </div>
             <div className="profile-dropdown">
               <button className="profile-btn admin">👨‍💼</button>
