@@ -1,11 +1,18 @@
 const express = require("express");
 const cors = require("cors");
-const { initDatabase, query } = require("./db");
+const dataService = require("./data");
 
 const app = express();
+const isDemoMode = dataService.mode === "memory";
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  if (isDemoMode) {
+    res.setHeader("X-Demo-Mode", "true");
+  }
+  next();
+});
 
 function generatePrefixedId(prefix) {
   const timestamp = Date.now().toString().slice(-6);
@@ -70,16 +77,11 @@ function mapCrimeRow(row) {
 }
 
 async function getUserByUsername(username) {
-  const rows = await query("SELECT * FROM Users WHERE username = ? LIMIT 1", [username]);
-  return rows[0] || null;
+  return dataService.getUserByUsername(username);
 }
 
 async function requireAdmin(adminUsername) {
-  const rows = await query(
-    "SELECT id, username, isAdmin FROM Users WHERE username = ? AND isAdmin = 1 LIMIT 1",
-    [adminUsername]
-  );
-  return rows[0] || null;
+  return dataService.requireAdmin(adminUsername);
 }
 
 // GET user by username
@@ -105,39 +107,7 @@ app.get("/api/users/:username/history", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const rows = await query(
-      `
-      SELECT
-        c.id,
-        c.title,
-        c.description,
-        c.region,
-        c.crimeType,
-        c.status,
-        c.reportedById,
-        c.verifiedById,
-        c.officerInCharge,
-        c.createdAt,
-        c.updatedAt,
-        r.id AS reportedByUserId,
-        r.username AS reportedByUsername,
-        r.name AS reportedByName,
-        r.phone AS reportedByPhone,
-        v.id AS verifiedByOfficerId,
-        v.username AS verifiedByOfficerUsername,
-        v.name AS verifiedByOfficerName,
-        o.id AS officerAssignedId,
-        o.username AS officerAssignedUsername,
-        o.name AS officerAssignedName
-      FROM CrimeReports c
-      LEFT JOIN Users r ON r.id = c.reportedById
-      LEFT JOIN Users v ON v.id = c.verifiedById
-      LEFT JOIN Users o ON o.id = c.officerInCharge
-      WHERE c.reportedById = ? OR c.verifiedById = ?
-      ORDER BY c.createdAt DESC
-      `,
-      [user.id, user.id]
-    );
+    const rows = await dataService.getUserHistoryRows(user.id);
 
     return res.json({
       user: {
@@ -165,8 +135,8 @@ app.put("/api/users/:username", async (req, res) => {
     }
 
     if (email && email !== user.email) {
-      const existingRows = await query("SELECT id FROM Users WHERE email = ? LIMIT 1", [email]);
-      if (existingRows.length > 0) {
+      const existingUser = await dataService.findUserByEmail(email);
+      if (existingUser) {
         return res.status(400).json({ error: "Email already in use" });
       }
     }
@@ -177,14 +147,13 @@ app.put("/api/users/:username", async (req, res) => {
     const updatedRegion = region || user.region;
     const updatedPhotoUrl = photoUrl === undefined ? user.photoUrl : photoUrl;
 
-    await query(
-      `
-      UPDATE Users
-      SET name = ?, email = ?, phone = ?, region = ?, photoUrl = ?
-      WHERE id = ?
-      `,
-      [updatedName, updatedEmail, updatedPhone, updatedRegion, updatedPhotoUrl, user.id]
-    );
+    await dataService.updateUserProfileById(user.id, {
+      name: updatedName,
+      email: updatedEmail,
+      phone: updatedPhone,
+      region: updatedRegion,
+      photoUrl: updatedPhotoUrl,
+    });
 
     return res.json({
       message: "Profile updated",
@@ -214,19 +183,19 @@ app.post("/api/users/register", async (req, res) => {
     }
 
     if (isAdmin) {
-      const existingAdmin = await query("SELECT id FROM Users WHERE isAdmin = 1 LIMIT 1");
-      if (existingAdmin.length > 0) {
+      const existingAdminCount = await dataService.countAdmins();
+      if (existingAdminCount > 0) {
         return res.status(403).json({ error: "Admin already exists. Only one admin allowed." });
       }
     }
 
-    const existingUser = await query("SELECT id FROM Users WHERE username = ? LIMIT 1", [username]);
-    if (existingUser.length > 0) {
+    const existingUser = await getUserByUsername(username);
+    if (existingUser) {
       return res.status(400).json({ error: "Username already taken" });
     }
 
-    const existingEmail = await query("SELECT id FROM Users WHERE email = ? LIMIT 1", [email]);
-    if (existingEmail.length > 0) {
+    const existingEmail = await dataService.findUserByEmail(email);
+    if (existingEmail) {
       return res.status(400).json({ error: "Email already registered" });
     }
 
@@ -246,25 +215,19 @@ app.post("/api/users/register", async (req, res) => {
     const finalRole = isAdmin ? "Admin" : role;
     const finalRegion = isAdmin ? "All" : region;
 
-    await query(
-      `
-      INSERT INTO Users (id, username, password, email, name, phone, region, role, isAdmin, adminId, adminSignupDate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        uniqueId,
-        username,
-        password,
-        email,
-        name,
-        phone,
-        finalRegion,
-        finalRole,
-        Boolean(isAdmin),
-        adminId,
-        adminSignupDate,
-      ]
-    );
+    await dataService.createUser({
+      id: uniqueId,
+      username,
+      password,
+      email,
+      name,
+      phone,
+      region: finalRegion,
+      role: finalRole,
+      isAdmin: Boolean(isAdmin),
+      adminId,
+      adminSignupDate,
+    });
 
     return res.status(201).json({
       message: "Account created successfully",
@@ -283,38 +246,7 @@ app.post("/api/users/register", async (req, res) => {
 // GET all verified crime reports (for home page display)
 app.get("/api/crime-reports", async (_req, res) => {
   try {
-    const rows = await query(
-      `
-      SELECT
-        c.id,
-        c.title,
-        c.description,
-        c.region,
-        c.crimeType,
-        c.status,
-        c.reportedById,
-        c.verifiedById,
-        c.officerInCharge,
-        c.createdAt,
-        c.updatedAt,
-        r.id AS reportedByUserId,
-        r.username AS reportedByUsername,
-        r.name AS reportedByName,
-        r.phone AS reportedByPhone,
-        v.id AS verifiedByOfficerId,
-        v.username AS verifiedByOfficerUsername,
-        v.name AS verifiedByOfficerName,
-        o.id AS officerAssignedId,
-        o.username AS officerAssignedUsername,
-        o.name AS officerAssignedName
-      FROM CrimeReports c
-      LEFT JOIN Users r ON r.id = c.reportedById
-      LEFT JOIN Users v ON v.id = c.verifiedById
-      LEFT JOIN Users o ON o.id = c.officerInCharge
-      WHERE c.status IN ('Verified', 'Closed')
-      ORDER BY c.createdAt DESC
-      `
-    );
+    const rows = await dataService.getVerifiedOrClosedCrimeRows();
 
     return res.json(rows.map(mapCrimeRow));
   } catch (error) {
@@ -329,18 +261,13 @@ app.patch("/api/crime-reports/:id/close", async (req, res) => {
     const { closedByUsername } = req.body;
     const { id } = req.params;
 
-    const officers = await query(
-      "SELECT id, username FROM Users WHERE username = ? AND role = 'Officer' LIMIT 1",
-      [closedByUsername]
-    );
-    const officer = officers[0];
+    const officer = await dataService.getOfficerByUsername(closedByUsername);
 
     if (!officer) {
       return res.status(404).json({ error: "Officer not found" });
     }
 
-    const crimeRows = await query("SELECT * FROM CrimeReports WHERE id = ? LIMIT 1", [id]);
-    const crimeReport = crimeRows[0];
+    const crimeReport = await dataService.getCrimeById(id);
 
     if (!crimeReport) {
       return res.status(404).json({ error: "Crime report not found" });
@@ -350,10 +277,10 @@ app.patch("/api/crime-reports/:id/close", async (req, res) => {
       return res.status(400).json({ error: "Crime report already closed" });
     }
 
-    await query("UPDATE CrimeReports SET status = 'Closed', verifiedById = ? WHERE id = ?", [officer.id, id]);
+    await dataService.closeCrimeById(id, officer.id);
 
-    const updatedRows = await query("SELECT * FROM CrimeReports WHERE id = ? LIMIT 1", [id]);
-    return res.json({ message: "Crime report closed", crimeReport: updatedRows[0] });
+    const updatedRow = await dataService.getCrimeById(id);
+    return res.json({ message: "Crime report closed", crimeReport: updatedRow });
   } catch (error) {
     console.error("Error closing crime report:", error.message);
     return res.status(500).json({ error: "Failed to close crime report", details: error.message });
@@ -376,19 +303,20 @@ app.post("/api/crime-reports", async (req, res) => {
 
     const crimeId = generatePrefixedId("crime");
 
-    await query(
-      `
-      INSERT INTO CrimeReports (id, title, description, region, crimeType, reportedById, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'Pending')
-      `,
-      [crimeId, title, description, region, crimeType, user.id]
-    );
+    await dataService.createCrimeReport({
+      id: crimeId,
+      title,
+      description,
+      region,
+      crimeType,
+      reportedById: user.id,
+    });
 
-    const createdRows = await query("SELECT * FROM CrimeReports WHERE id = ? LIMIT 1", [crimeId]);
+    const createdRow = await dataService.getCrimeById(crimeId);
 
     return res.status(201).json({
       message: "Crime report submitted successfully",
-      crimeReport: createdRows[0],
+      crimeReport: createdRow,
     });
   } catch (error) {
     console.error("Error creating crime report:", error.message);
@@ -402,18 +330,13 @@ app.patch("/api/crime-reports/:id/verify", async (req, res) => {
     const { id } = req.params;
     const { verifiedByUsername } = req.body;
 
-    const officerRows = await query(
-      "SELECT id, username, role, region FROM Users WHERE username = ? AND role = 'Officer' LIMIT 1",
-      [verifiedByUsername]
-    );
-    const officer = officerRows[0];
+    const officer = await dataService.getOfficerByUsername(verifiedByUsername);
 
     if (!officer) {
       return res.status(404).json({ error: "Officer not found" });
     }
 
-    const crimeRows = await query("SELECT id, region FROM CrimeReports WHERE id = ? LIMIT 1", [id]);
-    const crimeReport = crimeRows[0];
+    const crimeReport = await dataService.getCrimeById(id);
 
     if (!crimeReport) {
       return res.status(404).json({ error: "Crime report not found" });
@@ -425,10 +348,10 @@ app.patch("/api/crime-reports/:id/verify", async (req, res) => {
       });
     }
 
-    await query("UPDATE CrimeReports SET status = 'Verified', verifiedById = ? WHERE id = ?", [officer.id, id]);
+    await dataService.verifyCrimeById(id, officer.id);
 
-    const updatedRows = await query("SELECT * FROM CrimeReports WHERE id = ? LIMIT 1", [id]);
-    return res.json({ message: "Crime report verified successfully", crimeReport: updatedRows[0] });
+    const updatedRow = await dataService.getCrimeById(id);
+    return res.json({ message: "Crime report verified successfully", crimeReport: updatedRow });
   } catch (error) {
     console.error("Error verifying crime report:", error.message);
     return res.status(500).json({ error: "Failed to verify crime report", details: error.message });
@@ -438,38 +361,7 @@ app.patch("/api/crime-reports/:id/verify", async (req, res) => {
 // GET pending reports (for officer dashboard)
 app.get("/api/crime-reports/pending", async (_req, res) => {
   try {
-    const rows = await query(
-      `
-      SELECT
-        c.id,
-        c.title,
-        c.description,
-        c.region,
-        c.crimeType,
-        c.status,
-        c.reportedById,
-        c.verifiedById,
-        c.officerInCharge,
-        c.createdAt,
-        c.updatedAt,
-        r.id AS reportedByUserId,
-        r.username AS reportedByUsername,
-        r.name AS reportedByName,
-        r.phone AS reportedByPhone,
-        v.id AS verifiedByOfficerId,
-        v.username AS verifiedByOfficerUsername,
-        v.name AS verifiedByOfficerName,
-        o.id AS officerAssignedId,
-        o.username AS officerAssignedUsername,
-        o.name AS officerAssignedName
-      FROM CrimeReports c
-      LEFT JOIN Users r ON r.id = c.reportedById
-      LEFT JOIN Users v ON v.id = c.verifiedById
-      LEFT JOIN Users o ON o.id = c.officerInCharge
-      WHERE c.status = 'Pending'
-      ORDER BY c.createdAt DESC
-      `
-    );
+    const rows = await dataService.getPendingCrimeRows();
 
     return res.json(rows.map(mapCrimeRow));
   } catch (error) {
@@ -488,14 +380,7 @@ app.get("/api/admin/officers", async (req, res) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    const officers = await query(
-      `
-      SELECT id, username, name, email, phone, region, createdAt
-      FROM Users
-      WHERE role = 'Officer'
-      ORDER BY createdAt DESC
-      `
-    );
+    const officers = await dataService.getOfficersList();
 
     return res.json(officers);
   } catch (error) {
@@ -514,14 +399,7 @@ app.get("/api/admin/users", async (req, res) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    const users = await query(
-      `
-      SELECT id, username, name, email, phone, region, role, createdAt
-      FROM Users
-      WHERE isAdmin = 0
-      ORDER BY createdAt DESC
-      `
-    );
+    const users = await dataService.getNonAdminUsers();
 
     return res.json(users);
   } catch (error) {
@@ -540,14 +418,12 @@ app.post("/api/admin/appoint-officer", async (req, res) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    const crimeRows = await query("SELECT id, region FROM CrimeReports WHERE id = ? LIMIT 1", [crimeReportId]);
-    const crimeReport = crimeRows[0];
+    const crimeReport = await dataService.getCrimeById(crimeReportId);
     if (!crimeReport) {
       return res.status(404).json({ error: "Crime report not found" });
     }
 
-    const officerRows = await query("SELECT id, username, role, region FROM Users WHERE id = ? LIMIT 1", [officerId]);
-    const officer = officerRows[0];
+    const officer = await dataService.getOfficerById(officerId);
     if (!officer || officer.role !== "Officer") {
       return res.status(404).json({ error: "Officer not found" });
     }
@@ -558,10 +434,10 @@ app.post("/api/admin/appoint-officer", async (req, res) => {
       });
     }
 
-    await query("UPDATE CrimeReports SET officerInCharge = ? WHERE id = ?", [officer.id, crimeReportId]);
+    await dataService.assignOfficerToCrime(crimeReportId, officer.id);
 
-    const updatedRows = await query("SELECT * FROM CrimeReports WHERE id = ? LIMIT 1", [crimeReportId]);
-    return res.json({ message: "Officer assigned to case successfully", crimeReport: updatedRows[0] });
+    const updatedRow = await dataService.getCrimeById(crimeReportId);
+    return res.json({ message: "Officer assigned to case successfully", crimeReport: updatedRow });
   } catch (error) {
     console.error("Error appointing officer:", error.message);
     return res.status(500).json({ error: "Failed to appoint officer", details: error.message });
@@ -579,8 +455,7 @@ app.delete("/api/admin/users/:userId", async (req, res) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
-    const userRows = await query("SELECT id, username, isAdmin FROM Users WHERE id = ? LIMIT 1", [userId]);
-    const user = userRows[0];
+    const user = await dataService.getUserById(userId);
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -590,7 +465,7 @@ app.delete("/api/admin/users/:userId", async (req, res) => {
       return res.status(400).json({ error: "Cannot delete admin user" });
     }
 
-    await query("DELETE FROM Users WHERE id = ?", [userId]);
+    await dataService.deleteUserById(userId);
 
     return res.json({ message: "User removed successfully" });
   } catch (error) {
@@ -604,17 +479,7 @@ app.get("/api/admin/info", async (req, res) => {
   try {
     const { adminUsername } = req.query;
 
-    const rows = await query(
-      `
-      SELECT id, username, name, email, phone, adminId, adminSignupDate, isAdmin
-      FROM Users
-      WHERE username = ? AND isAdmin = 1
-      LIMIT 1
-      `,
-      [adminUsername]
-    );
-
-    const admin = rows[0];
+    const admin = await dataService.getAdminInfoByUsername(adminUsername);
     if (!admin) {
       return res.status(404).json({ error: "Admin not found" });
     }
@@ -637,11 +502,14 @@ app.get("/api/admin/info", async (req, res) => {
 
 async function startServer() {
   try {
-    await initDatabase();
-    console.log("Database initialized successfully");
+    await dataService.init();
+    console.log(`Data service initialized (${dataService.mode})`);
 
     app.listen(3001, () => {
       console.log("Server is running on port 3001");
+      if (isDemoMode) {
+        console.log("Demo mode enabled: using in-memory data store");
+      }
     });
   } catch (error) {
     console.error("Database error:", error.message);
