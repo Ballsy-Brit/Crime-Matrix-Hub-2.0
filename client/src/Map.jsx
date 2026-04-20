@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import DhakaMap from './DhakaMap';
+import { apiUrl } from './api';
 
 const allCrimes = [
   'Theft',
@@ -57,7 +58,7 @@ export default function MapPage({ user, userRole, isAdmin, onLogout, onNavigate,
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch('http://localhost:3001/api/crime-reports');
+        const res = await fetch(apiUrl('/api/crime-reports'));
         const data = await res.json();
         if (!mounted) return;
         const arr = Array.isArray(data) ? data : [];

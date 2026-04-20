@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { apiUrl } from './api';
 
 export default function Officers({ user, onNavigate, onCrimeSearch }) {
   const [officers, setOfficers] = useState([]);
@@ -16,7 +17,7 @@ export default function Officers({ user, onNavigate, onCrimeSearch }) {
 
   useEffect(() => {
     // Fetch all officers
-    fetch(`http://localhost:3001/api/admin/officers?adminUsername=${user}`)
+    fetch(apiUrl(`/api/admin/officers?adminUsername=${user}`))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -36,7 +37,7 @@ export default function Officers({ user, onNavigate, onCrimeSearch }) {
       });
 
     // Fetch all crimes for assignment
-    fetch('http://localhost:3001/api/crime-reports')
+      fetch(apiUrl('/api/crime-reports'))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -64,7 +65,7 @@ export default function Officers({ user, onNavigate, onCrimeSearch }) {
 
     setAssignmentLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/admin/appoint-officer', {
+      const response = await fetch(apiUrl('/api/admin/appoint-officer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +100,7 @@ export default function Officers({ user, onNavigate, onCrimeSearch }) {
     setAssignmentLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/admin/users/${selectedOfficer.id}?adminUsername=${user}`,
+        apiUrl(`/api/admin/users/${selectedOfficer.id}?adminUsername=${user}`),
         { method: 'DELETE' }
       );
 

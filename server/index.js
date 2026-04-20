@@ -3,6 +3,7 @@ const cors = require("cors");
 const dataService = require("./data");
 
 const app = express();
+const PORT = Number(process.env.PORT || 3001);
 const isDemoMode = dataService.mode === "memory";
 
 app.use(cors());
@@ -505,8 +506,8 @@ async function startServer() {
     await dataService.init();
     console.log(`Data service initialized (${dataService.mode})`);
 
-    app.listen(3001, () => {
-      console.log("Server is running on port 3001");
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
       if (isDemoMode) {
         console.log("Demo mode enabled: using in-memory data store");
       }

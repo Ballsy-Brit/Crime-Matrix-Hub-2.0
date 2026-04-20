@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import regions from './regions';
+import { apiUrl } from './api';
 
 export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate }) {
   const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
@@ -17,7 +18,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:3001/api/users/${user}`);
+        const res = await fetch(apiUrl(`/api/users/${user}`));
         const userData = await res.json();
         if (res.ok) {
           if (mounted) {
@@ -27,7 +28,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
         }
 
         // fetch history
-        const histRes = await fetch(`http://localhost:3001/api/users/${user}/history`);
+        const histRes = await fetch(apiUrl(`/api/users/${user}/history`));
         const histData = await histRes.json();
         if (histRes.ok) {
           if (mounted) setHistory(histData.reports || []);
@@ -35,7 +36,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
 
         // Fetch all users if admin
         if (isAdmin) {
-          const usersRes = await fetch(`http://localhost:3001/api/admin/users?adminUsername=${user}`);
+          const usersRes = await fetch(apiUrl(`/api/admin/users?adminUsername=${user}`));
           const usersData = await usersRes.json();
           if (usersRes.ok && Array.isArray(usersData)) {
             if (mounted) setUsers(usersData);
@@ -60,7 +61,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
     e.preventDefault();
     setMessage('');
     try {
-      const res = await fetch(`http://localhost:3001/api/users/${user}`, {
+      const res = await fetch(apiUrl(`/api/users/${user}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -81,7 +82,7 @@ export default function Profile({ user, userRole, isAdmin, onLogout, onNavigate 
   const handleRemoveUser = async (userId) => {
     if (!window.confirm('Are you sure you want to remove this user?')) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/users/${userId}?adminUsername=${user}`, {
+      const res = await fetch(apiUrl(`/api/admin/users/${userId}?adminUsername=${user}`), {
         method: 'DELETE',
       });
       if (res.ok) {

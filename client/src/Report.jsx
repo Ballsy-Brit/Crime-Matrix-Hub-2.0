@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import regions from './regions';
+import { apiUrl } from './api';
 
 const crimeTypes = ['Theft', 'Robbery', 'Burglary', 'Assault', 'Fraud', 'Vehicle Theft', 'Arson', 'Other'];
 
@@ -35,7 +36,7 @@ export default function Report({ user, userRole, isAdmin, onLogout, onNavigate, 
 
       console.log('Sending crime report:', payload);
 
-      const response = await fetch('http://localhost:3001/api/crime-reports', {
+      const response = await fetch(apiUrl('/api/crime-reports'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { apiUrl } from './api';
 
 export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
   const themeClass = isAdmin ? 'theme-admin' : userRole === 'Officer' ? 'theme-officer' : 'theme-citizen';
@@ -10,7 +11,7 @@ export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNav
 
   useEffect(() => {
     // Fetch pending crimes
-    fetch('http://localhost:3001/api/crime-reports/pending')
+    fetch(apiUrl('/api/crime-reports/pending'))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -31,7 +32,7 @@ export default function PendingCrimes({ user, userRole, isAdmin, onLogout, onNav
   const handleVerify = async (crimeId) => {
     setVerifying((prev) => ({ ...prev, [crimeId]: true }));
     try {
-      const response = await fetch(`http://localhost:3001/api/crime-reports/${crimeId}/verify`, {
+      const response = await fetch(apiUrl(`/api/crime-reports/${crimeId}/verify`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verifiedByUsername: user }),

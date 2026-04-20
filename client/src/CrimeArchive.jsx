@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import { apiUrl } from './api';
 
 const categories = ['All', 'Theft', 'Robbery', 'Burglary', 'Assault', 'Fraud', 'Vehicle Theft', 'Arson', 'Other'];
 
@@ -16,7 +17,7 @@ export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavi
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:3001/api/crime-reports');
+        const res = await fetch(apiUrl('/api/crime-reports'));
         const data = await res.json();
         if (mounted) setCrimes(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -145,7 +146,7 @@ export default function CrimeArchive({ user, userRole, isAdmin, onLogout, onNavi
                   {userRole === 'Officer' && crime.status !== 'Closed' && (
                     <button className="verify-button" onClick={async () => {
                       try {
-                        const res = await fetch(`http://localhost:3001/api/crime-reports/${crime.id}/close`, {
+                        const res = await fetch(apiUrl(`/api/crime-reports/${crime.id}/close`), {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ closedByUsername: user }),

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import regions from './regions';
+import { apiUrl } from './api';
 
 export default function Login({ onLoginSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -18,7 +19,7 @@ export default function Login({ onLoginSuccess }) {
     e.preventDefault();
     if (username.trim() && password.trim()) {
       try {
-        const response = await fetch(`http://localhost:3001/api/users/${username}`);
+        const response = await fetch(apiUrl(`/api/users/${username}`));
         const userData = await response.json();
         
         if (response.ok) {
@@ -50,7 +51,7 @@ export default function Login({ onLoginSuccess }) {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/api/users/register', {
+        const response = await fetch(apiUrl('/api/users/register'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -97,7 +98,7 @@ export default function Login({ onLoginSuccess }) {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/api/users/register', {
+        const response = await fetch(apiUrl('/api/users/register'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

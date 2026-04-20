@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import DhakaMap from './DhakaMap';
+import { apiUrl } from './api';
 
 export default function Home({ user, userRole, isAdmin, onLogout, onNavigate, onCrimeSearch }) {
   const [crimes, setCrimes] = useState([]);
@@ -10,7 +11,7 @@ export default function Home({ user, userRole, isAdmin, onLogout, onNavigate, on
 
   useEffect(() => {
     // Fetch verified crimes from API
-    fetch('http://localhost:3001/api/crime-reports')
+    fetch(apiUrl('/api/crime-reports'))
       .then((res) => res.json())
       .then((data) => {
         // Ensure data is an array
@@ -117,7 +118,7 @@ export default function Home({ user, userRole, isAdmin, onLogout, onNavigate, on
                 {userRole === 'Officer' && crime.status !== 'Closed' && (
                   <button className="verify-button" onClick={async () => {
                     try {
-                      const res = await fetch(`http://localhost:3001/api/crime-reports/${crime.id}/close`, {
+                      const res = await fetch(apiUrl(`/api/crime-reports/${crime.id}/close`), {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ closedByUsername: user }),

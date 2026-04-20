@@ -1,6 +1,196 @@
 const users = [];
 const crimeReports = [];
 
+function daysAgo(days) {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
+function seedDemoData() {
+  if (users.length > 0 || crimeReports.length > 0) {
+    return;
+  }
+
+  users.push(
+    {
+      id: 'admin-demo-001',
+      username: 'demoadmin',
+      password: 'demo123',
+      email: 'admin@crimematrix.test',
+      name: 'Demo Admin',
+      phone: '01700000001',
+      photoUrl: null,
+      region: 'All',
+      role: 'Admin',
+      isAdmin: true,
+      adminId: 'admin-100001',
+      adminSignupDate: daysAgo(40),
+      createdAt: daysAgo(40),
+      updatedAt: daysAgo(2),
+    },
+    {
+      id: 'officer-demo-001',
+      username: 'officer.rana',
+      password: 'demo123',
+      email: 'rana@police.test',
+      name: 'Rana Hossain',
+      phone: '01700000002',
+      photoUrl: null,
+      region: 'Dhanmondi',
+      role: 'Officer',
+      isAdmin: false,
+      adminId: null,
+      adminSignupDate: null,
+      createdAt: daysAgo(32),
+      updatedAt: daysAgo(1),
+    },
+    {
+      id: 'officer-demo-002',
+      username: 'officer.tasnim',
+      password: 'demo123',
+      email: 'tasnim@police.test',
+      name: 'Tasnim Akter',
+      phone: '01700000003',
+      photoUrl: null,
+      region: 'Uttara',
+      role: 'Officer',
+      isAdmin: false,
+      adminId: null,
+      adminSignupDate: null,
+      createdAt: daysAgo(30),
+      updatedAt: daysAgo(1),
+    },
+    {
+      id: 'citizen-demo-001',
+      username: 'asma.citizen',
+      password: 'demo123',
+      email: 'asma@test.com',
+      name: 'Asma Begum',
+      phone: '01800000001',
+      photoUrl: null,
+      region: 'Mirpur',
+      role: 'Citizen',
+      isAdmin: false,
+      adminId: null,
+      adminSignupDate: null,
+      createdAt: daysAgo(24),
+      updatedAt: daysAgo(2),
+    },
+    {
+      id: 'citizen-demo-002',
+      username: 'sabbir.citizen',
+      password: 'demo123',
+      email: 'sabbir@test.com',
+      name: 'Sabbir Rahman',
+      phone: '01800000002',
+      photoUrl: null,
+      region: 'Gulshan',
+      role: 'Citizen',
+      isAdmin: false,
+      adminId: null,
+      adminSignupDate: null,
+      createdAt: daysAgo(22),
+      updatedAt: daysAgo(2),
+    },
+    {
+      id: 'citizen-demo-003',
+      username: 'nusrat.citizen',
+      password: 'demo123',
+      email: 'nusrat@test.com',
+      name: 'Nusrat Jahan',
+      phone: '01800000003',
+      photoUrl: null,
+      region: 'Motijheel',
+      role: 'Citizen',
+      isAdmin: false,
+      adminId: null,
+      adminSignupDate: null,
+      createdAt: daysAgo(20),
+      updatedAt: daysAgo(2),
+    }
+  );
+
+  crimeReports.push(
+    {
+      id: 'crime-demo-001',
+      title: 'Phone snatching near Kazi Parade',
+      description: 'A commuter reported a quick snatching incident near the market road during evening rush hour.',
+      region: 'Mirpur',
+      crimeType: 'Theft',
+      status: 'Pending',
+      reportedById: 'citizen-demo-001',
+      verifiedById: null,
+      officerInCharge: null,
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(3),
+    },
+    {
+      id: 'crime-demo-002',
+      title: 'Suspicious withdrawal fraud complaint',
+      description: 'A resident found unauthorized mobile banking withdrawals linked to a fake support call.',
+      region: 'Gulshan',
+      crimeType: 'Fraud',
+      status: 'Pending',
+      reportedById: 'citizen-demo-002',
+      verifiedById: null,
+      officerInCharge: null,
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(2),
+    },
+    {
+      id: 'crime-demo-003',
+      title: 'Apartment lobby assault review',
+      description: 'Security footage confirmed a physical altercation in a residential lobby after a dispute.',
+      region: 'Dhanmondi',
+      crimeType: 'Assault',
+      status: 'Verified',
+      reportedById: 'citizen-demo-003',
+      verifiedById: 'officer-demo-001',
+      officerInCharge: 'officer-demo-001',
+      createdAt: daysAgo(6),
+      updatedAt: daysAgo(1),
+    },
+    {
+      id: 'crime-demo-004',
+      title: 'Recovered motorcycle theft case',
+      description: 'A stolen bike was recovered after the local patrol identified the suspect route.',
+      region: 'Uttara',
+      crimeType: 'Vehicle Theft',
+      status: 'Verified',
+      reportedById: 'citizen-demo-001',
+      verifiedById: 'officer-demo-002',
+      officerInCharge: 'officer-demo-002',
+      createdAt: daysAgo(5),
+      updatedAt: daysAgo(2),
+    },
+    {
+      id: 'crime-demo-005',
+      title: 'Warehouse arson investigation',
+      description: 'A warehouse fire was linked to deliberate ignition points and the report has been closed.',
+      region: 'Tejgaon',
+      crimeType: 'Arson',
+      status: 'Closed',
+      reportedById: 'citizen-demo-002',
+      verifiedById: 'officer-demo-001',
+      officerInCharge: 'officer-demo-001',
+      createdAt: daysAgo(12),
+      updatedAt: daysAgo(4),
+    },
+    {
+      id: 'crime-demo-006',
+      title: 'Commercial burglary closure',
+      description: 'A shop burglary in Motijheel was resolved after the suspect was identified and the case closed.',
+      region: 'Motijheel',
+      crimeType: 'Burglary',
+      status: 'Closed',
+      reportedById: 'citizen-demo-003',
+      verifiedById: 'officer-demo-002',
+      officerInCharge: 'officer-demo-002',
+      createdAt: daysAgo(10),
+      updatedAt: daysAgo(3),
+    }
+  );
+}
+
 function toDate(value) {
   return value instanceof Date ? value : new Date(value || Date.now());
 }
@@ -43,7 +233,7 @@ module.exports = {
   mode: "memory",
 
   async init() {
-    return;
+    seedDemoData();
   },
 
   async getUserByUsername(username) {
